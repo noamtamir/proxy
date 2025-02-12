@@ -1,8 +1,11 @@
+import logging
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel
 import httpx
 import os
+
+logging.basicConfig(level=logging.INFO)
 
 app = FastAPI()
 
@@ -31,11 +34,13 @@ async def proxy(request: Request, proxy_request: ProxyRequest):
         "Connection": "keep-alive",
         "Upgrade-Insecure-Requests": "1"
     }
+    logging.info(f"Proxying request to {url}")
 
     async with httpx.AsyncClient() as client:
         response = await client.get(url, headers=headers)
 
     headers = dict(response.headers)
+    logging.info(f"Response headers: {headers}")
 
     return Response(
         content=response.content,
