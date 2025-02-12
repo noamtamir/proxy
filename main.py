@@ -40,6 +40,7 @@ async def proxy(request: Request, proxy_request: ProxyRequest):
         response = await client.get(url, headers=headers)
 
     headers = dict(response.headers)
+    logging.info(f"Request actual headers: {response.request.headers}")
     logging.info(f"Response headers: {headers}")
 
     return Response(
