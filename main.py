@@ -40,7 +40,7 @@ async def proxy(request: Request, proxy_request: ProxyRequest):
     logging.info(f"Proxying request to {url}")
 
     async with httpx.AsyncClient() as client:
-        response = await client.get(url, headers=headers)
+        response = await client.get(url, headers=headers, follow_redirects=True)
 
     headers = dict(response.headers)
     logging.info(f"Request actual headers: {response.request.headers}")
