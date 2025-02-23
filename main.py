@@ -52,10 +52,10 @@ async def proxy(request: Request, path: str):
     }
 
     # Update headers with the original request headers
-    for header, value in request.headers.items():
-        # Skip the X-API-KEY header and host
-        if header.lower() not in ['x-api-key', 'host']:
-            headers[header] = value
+    # for header, value in request.headers.items():
+    #     # Skip the X-API-KEY header and host
+    #     if header.lower() not in ['x-api-key', 'host']:
+    #         headers[header] = value
 
     logging.info(f"Proxying {method} request to {url}")
 
