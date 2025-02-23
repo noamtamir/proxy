@@ -26,9 +26,9 @@ API_KEY = os.getenv("API_KEY")
 @app.api_route("/proxy/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"])
 async def proxy(request: Request, path: str):
     # Verify API key
-    api_key = request.headers.get("X-API-KEY")
-    if api_key != API_KEY:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+    # api_key = request.headers.get("X-API-KEY")
+    # if api_key != API_KEY:
+    #     raise HTTPException(status_code=401, detail="Unauthorized")
 
     # Get the full URL including query parameters
     url = f"{path}{'?' + str(request.query_params) if request.query_params else ''}"
