@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import httpx
 import os
+from typing import Any
 
 logging.basicConfig(level=logging.INFO)
 
@@ -22,23 +23,20 @@ app.add_middleware(
 
 API_KEY = os.getenv("API_KEY")
 
-
-class ProxyRequest(BaseModel):
-    url: str
-    method: str = "GET"  # Default to GET if not specified
-    body: dict | None = None  # Optional request body for POST requests
-    headers: dict | None = None  # Optional custom headers
-
-
-@app.post("/proxy")
-async def proxy(request: Request, proxy_request: ProxyRequest):
-    url = proxy_request.url
-    method = proxy_request.method.upper()
-
+@app.api_route("/proxy/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"])
+async def proxy(request: Request, path: str):
     # Verify API key
     api_key = request.headers.get("X-API-KEY")
     if api_key != API_KEY:
         raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Get the full URL including query parameters
+    url = f"{path}{'?' + str(request.query_params) if request.query_params else ''}"
+    if not url.startswith(('http://', 'https://')):
+        url = 'https://' + url
+
+    # Get the original request method
+    method = request.method
 
     # Start with default browser headers
     headers = {
@@ -53,19 +51,27 @@ async def proxy(request: Request, proxy_request: ProxyRequest):
         "sec-ch-ua-platform": "\"macOS\""
     }
 
-    # Override with custom headers if provided
-    if proxy_request.headers:
-        headers.update(proxy_request.headers)
+    # Update headers with the original request headers
+    for header, value in request.headers.items():
+        # Skip the X-API-KEY header and host
+        if header.lower() not in ['x-api-key', 'host']:
+            headers[header] = value
 
     logging.info(f"Proxying {method} request to {url}")
 
+    # Get the request body for methods that might have one
+    body = None
+    if method in ["POST", "PUT", "PATCH"]:
+        body = await request.body()
+
     async with httpx.AsyncClient() as client:
-        if method == "GET":
-            response = await client.get(url, headers=headers, follow_redirects=True)
-        elif method == "POST":
-            response = await client.post(url, headers=headers, json=proxy_request.body, follow_redirects=True)
-        else:
-            raise HTTPException(status_code=400, detail=f"Unsupported method: {method}")
+        response = await client.request(
+            method=method,
+            url=url,
+            headers=headers,
+            content=body,
+            follow_redirects=True
+        )
 
     headers = dict(response.headers)
     logging.info(f"Request actual headers: {response.request.headers}")
