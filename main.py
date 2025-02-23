@@ -14,11 +14,14 @@ API_KEY = os.getenv("API_KEY")
 
 class ProxyRequest(BaseModel):
     url: str
+    method: str = "GET"  # Default to GET if not specified
+    body: dict | None = None  # Optional request body for POST requests
 
 
 @app.post("/proxy")
 async def proxy(request: Request, proxy_request: ProxyRequest):
     url = proxy_request.url
+    method = proxy_request.method.upper()
 
     # Verify API key
     api_key = request.headers.get("X-API-KEY")
@@ -37,10 +40,15 @@ async def proxy(request: Request, proxy_request: ProxyRequest):
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": "\"macOS\""
     }
-    logging.info(f"Proxying request to {url}")
+    logging.info(f"Proxying {method} request to {url}")
 
     async with httpx.AsyncClient() as client:
-        response = await client.get(url, headers=headers, follow_redirects=True)
+        if method == "GET":
+            response = await client.get(url, headers=headers, follow_redirects=True)
+        elif method == "POST":
+            response = await client.post(url, headers=headers, json=proxy_request.body, follow_redirects=True)
+        else:
+            raise HTTPException(status_code=400, detail=f"Unsupported method: {method}")
 
     headers = dict(response.headers)
     logging.info(f"Request actual headers: {response.request.headers}")
