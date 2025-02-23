@@ -1,6 +1,7 @@
 import logging
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import Response
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import httpx
 import os
@@ -8,6 +9,16 @@ import os
 logging.basicConfig(level=logging.INFO)
 
 app = FastAPI()
+
+# TODO: Update CORS settings before deploying to production
+# Currently allowing all origins for development
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 API_KEY = os.getenv("API_KEY")
 
