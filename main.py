@@ -51,11 +51,10 @@ async def proxy(request: Request, path: str):
         "sec-ch-ua-platform": "\"macOS\""
     }
 
-    # Update headers with the original request headers
-    # for header, value in request.headers.items():
-    #     # Skip the X-API-KEY header and host
-    #     if header.lower() not in ['x-api-key', 'host']:
-    #         headers[header] = value
+    # Update headers with the original request Authorization header
+    auth_header = request.headers.get("Authorization")
+    if auth_header:
+        headers["Authorization"] = auth_header
 
     logging.info(f"Proxying {method} request to {url}")
 
