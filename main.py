@@ -16,6 +16,7 @@ class ProxyRequest(BaseModel):
     url: str
     method: str = "GET"  # Default to GET if not specified
     body: dict | None = None  # Optional request body for POST requests
+    headers: dict | None = None  # Optional custom headers
 
 
 @app.post("/proxy")
@@ -28,7 +29,7 @@ async def proxy(request: Request, proxy_request: ProxyRequest):
     if api_key != API_KEY:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-    # Add common browser headers
+    # Start with default browser headers
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36',
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
@@ -40,6 +41,11 @@ async def proxy(request: Request, proxy_request: ProxyRequest):
         "sec-ch-ua-mobile": "?0",
         "sec-ch-ua-platform": "\"macOS\""
     }
+
+    # Override with custom headers if provided
+    if proxy_request.headers:
+        headers.update(proxy_request.headers)
+
     logging.info(f"Proxying {method} request to {url}")
 
     async with httpx.AsyncClient() as client:
